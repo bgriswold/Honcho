@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Honcho.Tests", "Honcho.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Honcho.Migrations", "Honcho.Migrations\Honcho.Migrations.csproj", "{39B0BC3A-9E02-4F22-88A0-927E83CC3125}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Honcho.CodeGenerators", "Honcho.CodeGenerators\Honcho.CodeGenerators.csproj", "{0D58F4C8-43DB-4572-BD7E-46A8AB845547}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,16 @@ Global
 		{39B0BC3A-9E02-4F22-88A0-927E83CC3125}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{39B0BC3A-9E02-4F22-88A0-927E83CC3125}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{39B0BC3A-9E02-4F22-88A0-927E83CC3125}.Release|x86.ActiveCfg = Release|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{0D58F4C8-43DB-4572-BD7E-46A8AB845547}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

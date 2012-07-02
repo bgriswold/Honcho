@@ -1,0 +1,65 @@
+﻿<#+
+String GetAnnotationDataType(string sqlType){
+	switch(sqlType)
+    {
+        case "varchar":
+            return "Text";
+        case "nvarchar":
+            return "Text";
+        case "int":
+            return ""; //Maybe regex
+        case "uniqueidentifier":
+            return ""; //Maybe regex
+        case "datetime":
+            return "DateTime";
+        case "bigint":
+            return ""; //Maybe regex
+        case "binary":
+            return "";
+        case "bit":
+            return ""; //Maybe regex
+        case "char":
+			return "Text";
+        case "decimal":
+            return ""; //Maybe regex
+        case "float":
+            return ""; //Maybe regex
+        case "image":
+            return "";
+        case "money":
+            return "Currency";
+        case "nchar":
+            return "Text";
+        case "ntext":
+            return "Text";
+        case "numeric":
+            return ""; //Maybe regex
+        case "real":
+            return ""; //Maybe regex
+        case "smalldatetime":
+            return "DateTime";
+        case "smallint":
+            return ""; //Maybe regex
+        case "smallmoney":
+            return ""; //Maybe regex
+        case "sql_variant":
+            return "Text";
+        case "sysname":
+            return "Text";
+        case "text":
+            return "Text";
+        case "timestamp":
+            return ""; //DbType.Binary;
+        case "tinyint":
+            return ""; //  //Maybe regex DbType.Byte;
+        case "varbinary":
+            return ""; //DbType.Binary;
+        case "xml":
+            return ""; //DbType.Xml;	
+        default:
+            return "Text";
+    }
+
+}
+
+#>

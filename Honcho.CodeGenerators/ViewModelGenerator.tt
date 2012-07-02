@@ -1,0 +1,197 @@
+﻿<#
+//*********************************************************
+// T4 Attribute generation template based on 
+// Microsoft POCO T4 Template
+// Original code by Microsoft. All rights reserved.
+//*********************************************************
+#>
+<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ include file="EF.Utility.CS.ttinclude"#><#@
+ output extension=".cs"#><#
+
+CodeGenerationTools code = new CodeGenerationTools(this);
+MetadataLoader loader = new MetadataLoader(this);
+ 
+string inputFile = @"C:\Users\bgriswold\Documents\Workspace\development\PROJECT\PROJECT.Data\SientraEntities.edmx";
+string suffix = "ViewModel";
+ 
+EdmItemCollection ItemCollection = loader.CreateEdmItemCollection(inputFile);
+string namespaceName = "[NAMESPACE].Web.ViewModels";
+
+EntityFrameworkTemplateFileManager fileManager = EntityFrameworkTemplateFileManager.Create(this);
+WriteHeader(fileManager);
+
+EntityContainer container = ItemCollection.GetItems<EntityContainer>().FirstOrDefault();
+
+// Emit Entity Types
+foreach (EntityType entity in ItemCollection.GetItems<EntityType>().OrderBy(e => e.Name))
+{
+	
+	  string setName = (from meta in container.BaseEntitySets
+                                          where meta.ElementType.Name == entity.Name
+                                          select meta.Name).First();
+	
+	fileManager.StartNewFile(entity.Name + suffix + ".cs");	
+    BeginNamespace(namespaceName, code.Escape(entity), code);	
+#>
+public partial class <#=code.Escape(entity) + "Create" + suffix#> 
+{
+<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+		WriteDisplayName(edmProperty);
+		WriteRequiredAttribute(edmProperty);
+		WriteStringLengthAttribute(edmProperty);
+#>
+    <#=Accessibility.ForProperty(edmProperty)#> <#=code.Escape(edmProperty.TypeUsage)#> <#=code.Escape(edmProperty)#> { <#=Accessibility.ForGetter(edmProperty)#>get; <#=Accessibility.ForSetter(edmProperty)#>set; }
+	
+<#        
+    }
+#>
+}
+
+public partial class <#=code.Escape(entity) + "Edit" + suffix#> 
+{
+<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+		WriteDisplayName(edmProperty);
+		WriteRequiredAttribute(edmProperty);
+		WriteStringLengthAttribute(edmProperty);
+#>
+    <#=Accessibility.ForProperty(edmProperty)#> <#=code.Escape(edmProperty.TypeUsage)#> <#=code.Escape(edmProperty)#> { <#=Accessibility.ForGetter(edmProperty)#>get; <#=Accessibility.ForSetter(edmProperty)#>set; }
+	
+<#        
+    }
+#>
+}
+
+public partial class <#=code.Escape(entity) + "Details" + suffix#> 
+{
+<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+#>		
+    <#=Accessibility.ForProperty(edmProperty)#> <#=code.Escape(edmProperty.TypeUsage)#> <#=code.Escape(edmProperty)#> { <#=Accessibility.ForGetter(edmProperty)#>get; <#=Accessibility.ForSetter(edmProperty)#>set; }
+<#  
+	}
+#>
+}
+
+public partial class <#=code.Escape(entity) + "Delete" + suffix#> 
+{
+<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+#>		
+    <#=Accessibility.ForProperty(edmProperty)#> <#=code.Escape(edmProperty.TypeUsage)#> <#=code.Escape(edmProperty)#> { <#=Accessibility.ForGetter(edmProperty)#>get; <#=Accessibility.ForSetter(edmProperty)#>set; }
+<#        
+    }
+#>
+}
+
+public partial class <#=code.Escape(entity) + "Index" + suffix#> 
+{
+	public IPagination<<#=code.Escape(entity) + "Details" + suffix#>> <#=setName #> { get; set; }
+	
+	// Add filter criteria properties here
+}
+
+
+<#
+    EndNamespace(namespaceName);
+}
+fileManager.Process();
+
+#>
+<#+
+
+//Split entity name by capitals
+void WriteDisplayName(EdmProperty edmProperty) {
+	string displayName = edmProperty.Name;
+	if (!string.IsNullOrEmpty(displayName)) {
+		displayName = Regex.Replace(displayName,
+			"([A-Z]+)", " $1",
+			RegexOptions.Compiled).Trim();
+		string displayAttribute = string.Format("[DisplayName(\"{0}\")]", displayName);
+#>
+	<#=displayAttribute#>
+<#+
+	}
+}
+
+
+//If property is not nullable, add required attribute
+void WriteRequiredAttribute(EdmProperty edmProperty) {
+	if (!edmProperty.Nullable) {
+#>
+	[Required]
+<#+
+	}
+}
+
+//Set StringLength if MaxLength value is present
+void WriteStringLengthAttribute(EdmProperty edmProperty) { 
+	Facet maxLengthfacet;
+	if (edmProperty.TypeUsage.Facets.TryGetValue("MaxLength", true, out maxLengthfacet)) {
+		double lengthAttribute;
+		if (double.TryParse(maxLengthfacet.Value.ToString(), out lengthAttribute)) {
+		string stringLengthAttribute = string.Format("[StringLength({0})]", lengthAttribute);
+#>
+	<#=stringLengthAttribute#>
+<#+	
+		}
+	}
+}
+
+void WriteHeader(EntityFrameworkTemplateFileManager fileManager, params string[] extraUsings)
+{
+    fileManager.StartHeader();
+#>
+
+<#+ 
+    fileManager.EndBlock();
+}
+
+void BeginNamespace(string namespaceName, string entity, CodeGenerationTools code)
+{
+    CodeRegion region = new CodeRegion(this);
+    if (!String.IsNullOrEmpty(namespaceName))
+    {
+#>
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+
+namespace <#=namespaceName + "." + entity#>
+{
+<#+
+        PushIndent(CodeRegion.GetIndent(1));
+    }
+}
+
+void EndNamespace(string namespaceName)
+{
+    if (!String.IsNullOrEmpty(namespaceName))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+string CamelCaseSplitName(string name) {
+	
+	if (!string.IsNullOrEmpty(name)) {
+		name = Regex.Replace(name,
+			"([A-Z]+)", " $1",
+			RegexOptions.Compiled).Trim();
+	}
+	return name;
+}
+
+
+#>

@@ -1,0 +1,242 @@
+﻿<#
+//*********************************************************
+// T4 Attribute generation template based on 
+// Microsoft POCO T4 Template
+// Original code by Microsoft. All rights reserved.
+//*********************************************************
+#>
+<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ include file="EF.Utility.CS.ttinclude"#><#@
+ output extension=".cs"#><#
+
+CodeGenerationTools code = new CodeGenerationTools(this);
+MetadataLoader loader = new MetadataLoader(this);
+ 
+string inputFile = @"[EDMXPATH]";
+string suffix = "FormHandler";
+ 
+EdmItemCollection ItemCollection = loader.CreateEdmItemCollection(inputFile);
+string namespaceName = "Web.FormHandlers";
+ 
+EntityFrameworkTemplateFileManager fileManager = EntityFrameworkTemplateFileManager.Create(this);
+WriteHeader(fileManager);
+
+// Emit Entity Types
+foreach (EntityType entity in ItemCollection.GetItems<EntityType>().OrderBy(e => e.Name))
+{
+    fileManager.StartNewFile(entity.Name + suffix + ".cs");		
+    BeginNamespace(namespaceName, code.Escape(entity), code);
+#>
+public partial class <#=code.Escape(entity) + "Create" + suffix#> : IFormHandler<<#=code.Escape(entity)#>CreateViewModel>
+{
+	private readonly I<#=code.Escape(entity)#>Repository _repository;
+    
+    public <#=code.Escape(entity)#>CreateFormHandler(I<#=code.Escape(entity)#>Repository repository)
+    {
+        _repository = repository;              
+    }
+	
+	public FormHandleStatus Handle(<#=code.Escape(entity)#>CreateViewModel formModel, HttpSessionStateBase session)
+    {
+        var model = new [NAMESPACE].Data.<#=code.Escape(entity)#>
+                {
+						<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+#>
+<#=code.Escape(edmProperty)#> = formModel.<#=code.Escape(edmProperty)#>,
+<#        
+    }
+#>
+               };
+
+
+        if (formModel.UploadedFile != null)
+        {
+            model.FileName = formModel.UploadedFile.FileName;
+            model.FileSize = formModel.UploadedFile.ContentLength;
+            model.FileContentType = formModel.UploadedFile.ContentType;
+                            
+            var bytes = new byte[formModel.UploadedFile.ContentLength];
+            formModel.UploadedFile.InputStream.Read(bytes, 0, formModel.UploadedFile.ContentLength);
+            model.FileBytes = bytes;
+        }
+
+        _repository.Add(model);
+
+        return new FormHandleStatus(true, "<#=CamelCaseSplitName(code.Escape(entity))#> created successfully.");
+    }
+}
+
+public partial class <#=code.Escape(entity) + "Delete" + suffix#> : IFormHandler<<#=code.Escape(entity)#>DeleteViewModel>
+{
+	private readonly I<#=code.Escape(entity)#>Repository _repository;
+	
+	public <#=code.Escape(entity)#>DeleteFormHandler(I<#=code.Escape(entity)#>Repository repository)
+    {
+        _repository = repository;
+    }
+	
+	public FormHandleStatus Handle(<#=code.Escape(entity)#>DeleteViewModel formModel, HttpSessionStateBase session)
+	{
+		try
+        {
+            _repository.Delete(formModel.<#=code.Escape(entity)#>Id);
+        }
+        catch (Exception)
+        {
+            return FormHandleStatus.FailureResult("Error", "<#=CamelCaseSplitName(code.Escape(entity))#> may be currently in use and may not be deleted at this time.");
+        }
+
+        return new FormHandleStatus(true, "<#=CamelCaseSplitName(code.Escape(entity))#> deleted successfully.");
+	}
+}
+
+public partial class <#=code.Escape(entity) + "Edit" + suffix#> : IFormHandler<<#=code.Escape(entity)#>EditViewModel>
+{
+	private readonly I<#=code.Escape(entity)#>Repository _repository;
+    
+    public <#=code.Escape(entity)#>EditFormHandler(I<#=code.Escape(entity)#>Repository repository)
+    {
+        _repository = repository;
+    }
+	
+	public FormHandleStatus Handle(<#=code.Escape(entity)#>EditViewModel formModel, HttpSessionStateBase session)
+    {
+			var model = _repository.Get(formModel.<#=code.Escape(entity)#>Id);
+
+            if (model == null)
+            {
+                return FormHandleStatus.Failure;
+            }
+			
+       				<#
+    foreach (EdmProperty edmProperty in entity.Properties.Where(p => p.TypeUsage.EdmType is PrimitiveType && p.DeclaringType == entity))
+    {
+#>
+model.<#=code.Escape(edmProperty)#> = formModel.<#=code.Escape(edmProperty)#>;
+<#        
+    }
+#>
+       
+
+
+        if (formModel.UploadedFile != null)
+        {
+            model.FileName = formModel.UploadedFile.FileName;
+            model.FileSize = formModel.UploadedFile.ContentLength;
+            model.FileContentType = formModel.UploadedFile.ContentType;
+                            
+            var bytes = new byte[formModel.UploadedFile.ContentLength];
+            formModel.UploadedFile.InputStream.Read(bytes, 0, formModel.UploadedFile.ContentLength);
+            model.FileBytes = bytes;
+        }
+
+        _repository.Update(model);
+
+        return new FormHandleStatus(true, "<#=CamelCaseSplitName(code.Escape(entity))#> updated successfully.");
+    }
+}
+
+
+
+<#
+    EndNamespace(namespaceName);
+}
+fileManager.Process();
+
+#>
+<#+
+
+
+//Split entity name by capitals
+void WriteDisplayName(EdmProperty edmProperty) {
+	string displayName = edmProperty.Name;
+	if (!string.IsNullOrEmpty(displayName)) {
+		displayName = Regex.Replace(displayName,
+			"([A-Z]+)", " $1",
+			RegexOptions.Compiled).Trim();
+		string displayAttribute = string.Format("[DisplayName(\"{0}\")]", displayName);
+#>
+	<#=displayAttribute#>
+<#+
+	}
+}
+
+
+//If property is not nullable, add required attribute
+void WriteRequiredAttribute(EdmProperty edmProperty) {
+	if (!edmProperty.Nullable) {
+#>
+	[Required]
+<#+
+	}
+}
+
+//Set StringLength if MaxLength value is present
+void WriteStringLengthAttribute(EdmProperty edmProperty) { 
+	Facet maxLengthfacet;
+	if (edmProperty.TypeUsage.Facets.TryGetValue("MaxLength", true, out maxLengthfacet)) {
+		double lengthAttribute;
+		if (double.TryParse(maxLengthfacet.Value.ToString(), out lengthAttribute)) {
+		string stringLengthAttribute = string.Format("[StringLength({0})]", lengthAttribute);
+#>
+	<#=stringLengthAttribute#>
+<#+	
+		}
+	}
+}
+
+void WriteHeader(EntityFrameworkTemplateFileManager fileManager, params string[] extraUsings)
+{
+    fileManager.StartHeader();
+#>
+
+<#+ 
+    fileManager.EndBlock();
+}
+
+void BeginNamespace(string namespaceName, string entity, CodeGenerationTools code)
+{
+    CodeRegion region = new CodeRegion(this);
+    if (!String.IsNullOrEmpty(namespaceName))
+    {
+#>
+using System;
+using [NAMESPACE].Core;
+using [NAMESPACE].Repository;
+using [NAMESPACE].Web.Context;
+using [NAMESPACE].Web.ViewModels.<#=entity#>;
+
+namespace <#=namespaceName + "." + entity#>
+{
+<#+
+        PushIndent(CodeRegion.GetIndent(1));
+    }
+}
+
+void EndNamespace(string namespaceName)
+{
+    if (!String.IsNullOrEmpty(namespaceName))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+string CamelCaseSplitName(string name) {
+	
+	if (!string.IsNullOrEmpty(name)) {
+		name = Regex.Replace(name,
+			"([A-Z]+)", " $1",
+			RegexOptions.Compiled).Trim();
+	}
+	return name;
+}
+
+
+#>
+
